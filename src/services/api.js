@@ -7,7 +7,11 @@
  * local persistence so the entire app works 100% complete with real authentication.
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (
+  typeof window !== 'undefined' && window.location.hostname === 'localhost' && window.location.port === '5173'
+    ? 'http://localhost:5000/api'
+    : '/api'
+);
 
 // Keys for fallback persistence
 const STORAGE_KEYS = {

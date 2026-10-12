@@ -307,7 +307,20 @@ app.patch('/api/orders/:id/status', (req, res) => {
   res.json(db.orders[idx]);
 });
 
+// -----------------------------------------------------------------
+// SERVE FRONTEND (STATIC ASSETS & SPA ROUTING FOR PRODUCTION/RENDER)
+// -----------------------------------------------------------------
+const distPath = path.join(__dirname, 'dist');
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+  app.get('*', (req, res) => {
+    // If request does not match an API endpoint, serve index.html
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`🚀 CampusBite Backend Server listening on http://localhost:${PORT}`);
+  console.log(`🚀 CampusBite Server listening on port ${PORT}`);
 });
+
