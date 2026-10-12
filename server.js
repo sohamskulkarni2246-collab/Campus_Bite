@@ -313,8 +313,8 @@ app.patch('/api/orders/:id/status', (req, res) => {
 const distPath = path.join(__dirname, 'dist');
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));
-  app.get('*', (req, res) => {
-    // If request does not match an API endpoint, serve index.html
+  // Catch-all handler for Single Page Application routing (compatible with Express 4 & 5)
+  app.use((req, res) => {
     res.sendFile(path.join(distPath, 'index.html'));
   });
 }
