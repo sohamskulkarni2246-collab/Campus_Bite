@@ -22,7 +22,7 @@ export default function StaffView() {
         <div>
           <h2>Canteen Staff Operations Hub 👨‍🍳</h2>
           <p>
-            Logged in as <strong>{user?.name || 'Chef Ramesh'}</strong> • Main Campus Canteen
+            Logged in as <strong>{user?.name}</strong> • {user?.canteenName || 'Campus Canteen'} ({user?.counterLocation || 'Main Counter'})
           </p>
         </div>
 

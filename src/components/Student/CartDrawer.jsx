@@ -23,7 +23,7 @@ export default function CartDrawer() {
     setIsCartOpen, 
     placeOrder, 
     user, 
-    setIsLoginOpen 
+    logoutUser 
   } = useApp();
 
   const [cookingNotes, setCookingNotes] = useState('');
@@ -33,7 +33,7 @@ export default function CartDrawer() {
 
   const handleCheckout = async () => {
     if (!user) {
-      setIsLoginOpen(true);
+      logoutUser();
       return;
     }
 

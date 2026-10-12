@@ -2,17 +2,19 @@
  * CampusBite API Client Service
  * 
  * Configured to connect to your backend REST API.
- * By default, endpoints target: http://localhost:5000/api (or VITE_API_BASE_URL).
- * If the backend server is not currently reachable, it seamlessly uses
- * browser localStorage so the frontend is 100% testable immediately.
+ * Target URL: http://localhost:5000/api (or VITE_API_BASE_URL).
+ * If the backend server is not currently reachable, it uses browser
+ * local persistence so the entire app works 100% complete with real authentication.
  */
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
-// Keys for fallback local persistence
+// Keys for fallback persistence
 const STORAGE_KEYS = {
   ITEMS: 'campus_bite_items',
   ORDERS: 'campus_bite_orders',
+  STUDENTS: 'campus_bite_registered_students',
+  STAFF_USERS: 'campus_bite_registered_staff',
 };
 
 // Check if backend API is reachable
@@ -20,7 +22,7 @@ export async function checkBackendConnection() {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 2000);
-    const res = await fetch(`${API_BASE_URL}/health`, { credentials: 'omit', credentials: 'omit', signal: controller.signal });
+    const res = await fetch(`${API_BASE_URL}/health`, { signal: controller.signal });
     clearTimeout(timeoutId);
     return res.ok;
   } catch {
@@ -29,12 +31,229 @@ export async function checkBackendConnection() {
 }
 
 // -------------------------------------------------------------
+// AUTHENTICATION API: STUDENT
+// -------------------------------------------------------------
+
+/**
+ * Register a new student
+ * @param {Object} data - { name, rollNo, email, phone, department, password }
+ */
+export async function studentSignUp(data) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/student/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const result = await res.json();
+    if (res.ok) {
+      return { success: true, user: result.user, isBackend: true };
+    }
+    return { success: false, error: result.error || 'Registration failed' };
+  } catch (err) {
+    console.info('Backend unreachable, saving student locally:', err.message);
+  }
+
+  // Local fallback persistence
+  const students = JSON.parse(localStorage.getItem(STORAGE_KEYS.STUDENTS) || '[]');
+  const normalizedRoll = data.rollNo.trim().toUpperCase();
+  const existing = students.find(
+    (s) => s.rollNo.toUpperCase() === normalizedRoll || (data.email && s.email && s.email.toLowerCase() === data.email.trim().toLowerCase())
+  );
+
+  if (existing) {
+    return { success: false, error: 'A student with this Roll Number or Email is already registered.' };
+  }
+
+  const newStudent = {
+    id: `student_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+    name: data.name.trim(),
+    rollNo: normalizedRoll,
+    email: data.email ? data.email.trim().toLowerCase() : '',
+    phone: data.phone ? data.phone.trim() : '',
+    department: data.department ? data.department.trim() : 'General',
+    password: data.password.trim(),
+    createdAt: new Date().toISOString(),
+  };
+
+  students.push(newStudent);
+  localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(students));
+
+  const user = {
+    role: 'STUDENT',
+    id: newStudent.id,
+    name: newStudent.name,
+    rollNo: newStudent.rollNo,
+    email: newStudent.email,
+    department: newStudent.department,
+  };
+
+  return { success: true, user, isBackend: false };
+}
+
+/**
+ * Sign in an existing student
+ * @param {string} identifier - Roll number or Email
+ * @param {string} password - Password
+ */
+export async function studentSignIn(identifier, password) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/student/signin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier, password }),
+    });
+    const result = await res.json();
+    if (res.ok) {
+      return { success: true, user: result.user, isBackend: true };
+    }
+    return { success: false, error: result.error || 'Invalid credentials' };
+  } catch (err) {
+    console.info('Backend unreachable, verifying student locally:', err.message);
+  }
+
+  // Local fallback verification
+  const students = JSON.parse(localStorage.getItem(STORAGE_KEYS.STUDENTS) || '[]');
+  const cleanIdent = identifier.trim().toUpperCase();
+  const student = students.find(
+    (s) => s.rollNo.toUpperCase() === cleanIdent || s.email.toUpperCase() === cleanIdent
+  );
+
+  if (!student) {
+    return { success: false, error: 'No student found with this Roll Number or Email. Please sign up first.' };
+  }
+
+  if (student.password !== password.trim()) {
+    return { success: false, error: 'Incorrect password. Please try again.' };
+  }
+
+  const user = {
+    role: 'STUDENT',
+    id: student.id,
+    name: student.name,
+    rollNo: student.rollNo,
+    email: student.email,
+    department: student.department,
+  };
+
+  return { success: true, user, isBackend: false };
+}
+
+// -------------------------------------------------------------
+// AUTHENTICATION API: STAFF & NEW CANTEEN REGISTRATION
+// -------------------------------------------------------------
+
+/**
+ * Register a new Canteen and its Staff account
+ * @param {Object} data - { canteenName, managerName, staffId, email, phone, counterLocation, password }
+ */
+export async function staffSignUp(data) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/staff/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const result = await res.json();
+    if (res.ok) {
+      return { success: true, user: result.user, isBackend: true };
+    }
+    return { success: false, error: result.error || 'Canteen registration failed' };
+  } catch (err) {
+    console.info('Backend unreachable, registering canteen locally:', err.message);
+  }
+
+  // Local fallback persistence
+  const staffList = JSON.parse(localStorage.getItem(STORAGE_KEYS.STAFF_USERS) || '[]');
+  const cleanStaffId = data.staffId.trim().toLowerCase();
+  const existing = staffList.find((s) => s.staffId.toLowerCase() === cleanStaffId);
+
+  if (existing) {
+    return { success: false, error: 'Staff ID is already registered. Please choose another ID.' };
+  }
+
+  const newStaff = {
+    id: `staff_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+    canteenName: data.canteenName.trim(),
+    managerName: data.managerName.trim(),
+    staffId: cleanStaffId,
+    email: data.email ? data.email.trim().toLowerCase() : '',
+    phone: data.phone ? data.phone.trim() : '',
+    counterLocation: data.counterLocation ? data.counterLocation.trim() : 'Main Counter',
+    password: data.password.trim(),
+    createdAt: new Date().toISOString(),
+  };
+
+  staffList.push(newStaff);
+  localStorage.setItem(STORAGE_KEYS.STAFF_USERS, JSON.stringify(staffList));
+
+  const user = {
+    role: 'STAFF',
+    id: newStaff.id,
+    name: newStaff.managerName,
+    staffId: newStaff.staffId,
+    canteenName: newStaff.canteenName,
+    counterLocation: newStaff.counterLocation,
+  };
+
+  return { success: true, user, isBackend: false };
+}
+
+/**
+ * Sign in existing Canteen Staff
+ * @param {string} identifier - Staff ID or Email
+ * @param {string} password - Password
+ */
+export async function staffSignIn(identifier, password) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/staff/signin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier, password }),
+    });
+    const result = await res.json();
+    if (res.ok) {
+      return { success: true, user: result.user, isBackend: true };
+    }
+    return { success: false, error: result.error || 'Invalid credentials' };
+  } catch (err) {
+    console.info('Backend unreachable, verifying staff locally:', err.message);
+  }
+
+  // Local fallback verification
+  const staffList = JSON.parse(localStorage.getItem(STORAGE_KEYS.STAFF_USERS) || '[]');
+  const cleanIdent = identifier.trim().toLowerCase();
+  const staff = staffList.find(
+    (s) => s.staffId.toLowerCase() === cleanIdent || s.email.toLowerCase() === cleanIdent
+  );
+
+  if (!staff) {
+    return { success: false, error: 'No canteen staff found with this ID. Please register your canteen first.' };
+  }
+
+  if (staff.password !== password.trim()) {
+    return { success: false, error: 'Incorrect security password. Please try again.' };
+  }
+
+  const user = {
+    role: 'STAFF',
+    id: staff.id,
+    name: staff.managerName,
+    staffId: staff.staffId,
+    canteenName: staff.canteenName,
+    counterLocation: staff.counterLocation,
+  };
+
+  return { success: true, user, isBackend: false };
+}
+
+// -------------------------------------------------------------
 // MENU ITEMS API
 // -------------------------------------------------------------
 
 /**
  * Fetch all food items from the backend
- * Requirements: Initially returns an empty list [] until items are added
+ * Initially returns an empty list [] until items are added by staff
  */
 export async function fetchMenuItems() {
   try {
@@ -47,7 +266,6 @@ export async function fetchMenuItems() {
     console.info('Backend API unavailable, using local cache:', err.message);
   }
 
-  // Fallback to local storage (initially empty array as requested!)
   const localItems = JSON.parse(localStorage.getItem(STORAGE_KEYS.ITEMS) || '[]');
   return { data: localItems, isBackend: false };
 }
@@ -141,7 +359,7 @@ export async function deleteMenuItem(id) {
 // -------------------------------------------------------------
 
 /**
- * Fetch all orders (Staff views all, Student can filter by studentRoll)
+ * Fetch all orders
  */
 export async function fetchOrders(studentRoll = null) {
   try {
@@ -165,17 +383,16 @@ export async function fetchOrders(studentRoll = null) {
 }
 
 /**
- * Student places a preorder
- * Notice: paymentMethod is strictly 'OFFLINE_CASH' / Pay at counter!
+ * Student places a preorder (Strictly Offline Payment)
  */
 export async function submitOrder(orderData) {
-  const tokenNumber = Math.floor(100 + Math.random() * 900); // e.g. #CB-384
+  const tokenNumber = Math.floor(100 + Math.random() * 900);
   const payload = {
     ...orderData,
     token: `CB-${tokenNumber}`,
-    status: 'RECEIVED', // 'RECEIVED' | 'PREPARING' | 'READY' | 'COMPLETED' | 'CANCELLED'
+    status: 'RECEIVED',
     remainingTimeMinutes: orderData.estimatedPrepTime || 15,
-    paymentMethod: 'OFFLINE_COUNTER', // Strictly Offline Payment
+    paymentMethod: 'OFFLINE_COUNTER',
     paymentStatus: 'UNPAID_PENDING_PICKUP',
     createdAt: new Date().toISOString(),
   };
@@ -203,7 +420,7 @@ export async function submitOrder(orderData) {
   localOrders.unshift(newOrder);
   localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(localOrders));
 
-  // Also decrement stock in local storage
+  // Decrement stock locally
   const localItems = JSON.parse(localStorage.getItem(STORAGE_KEYS.ITEMS) || '[]');
   orderData.items.forEach((ordered) => {
     const item = localItems.find((it) => it.id === ordered.id);
@@ -218,9 +435,6 @@ export async function submitOrder(orderData) {
 
 /**
  * Staff updates order status & remaining preparation time
- * @param {string} orderId 
- * @param {string} status - 'RECEIVED' | 'PREPARING' | 'READY' | 'COMPLETED'
- * @param {number} remainingMinutes - estimated time remaining in minutes (e.g. 10, 5, 0)
  */
 export async function updateOrderStatus(orderId, status, remainingMinutes) {
   const updates = {
@@ -256,82 +470,6 @@ export async function updateOrderStatus(orderId, status, remainingMinutes) {
     return { success: true, order: localOrders[idx], isBackend: false };
   }
   return { success: false, error: 'Order not found' };
-}
-
-/**
- * Optional helper to seed demo items (used if user clicks "Load Demo Menu" for quick UI preview)
- */
-export function seedSampleMenu() {
-  const sampleItems = [
-    {
-      id: 'demo_1',
-      name: 'Crispy Aloo Samosa (2 Pcs)',
-      price: 30,
-      quantity: 25,
-      category: 'Snacks',
-      isVeg: true,
-      imageUrl: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=600&auto=format&fit=crop&q=80',
-      prepTime: 5,
-      description: 'Hot and flaky pastry stuffed with spiced potato filling, served with mint and tamarind chutney.',
-    },
-    {
-      id: 'demo_2',
-      name: 'Paneer Butter Masala Thali',
-      price: 120,
-      quantity: 15,
-      category: 'Meals',
-      isVeg: true,
-      imageUrl: 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=600&auto=format&fit=crop&q=80',
-      prepTime: 12,
-      description: 'Rich paneer gravy served with 3 butter rotis, steamed jeera rice, dal tadka, and fresh salad.',
-    },
-    {
-      id: 'demo_3',
-      name: 'Cheese Grilled Veg Burger',
-      price: 75,
-      quantity: 20,
-      category: 'Fast Food',
-      isVeg: true,
-      imageUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80',
-      prepTime: 10,
-      description: 'Crispy veggie patty layered with melted cheddar cheese slice, fresh lettuce, and tangy burger mayo.',
-    },
-    {
-      id: 'demo_4',
-      name: 'Masala Dosa with Chutney & Sambar',
-      price: 60,
-      quantity: 18,
-      category: 'South Indian',
-      isVeg: true,
-      imageUrl: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=600&auto=format&fit=crop&q=80',
-      prepTime: 8,
-      description: 'Golden crispy fermented crepe filled with spiced mashed potato, served with coconut chutney & hot sambar.',
-    },
-    {
-      id: 'demo_5',
-      name: 'Chilli Chicken Fried Rice',
-      price: 130,
-      quantity: 12,
-      category: 'Fast Food',
-      isVeg: false,
-      imageUrl: 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=600&auto=format&fit=crop&q=80',
-      prepTime: 15,
-      description: 'Wok-tossed basmati rice with diced chicken, bell peppers, spring onions, and spicy Indo-Chinese sauces.',
-    },
-    {
-      id: 'demo_6',
-      name: 'Chilled Cold Coffee with Ice Cream',
-      price: 50,
-      quantity: 30,
-      category: 'Beverages',
-      isVeg: true,
-      imageUrl: 'https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=600&auto=format&fit=crop&q=80',
-      prepTime: 4,
-      description: 'Thick blended coffee topped with chocolate drizzle and a scoop of vanilla ice cream.',
-    },
-  ];
-  localStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify(sampleItems));
-  return sampleItems;
 }
 
 export function clearMenuData() {

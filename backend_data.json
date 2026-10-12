@@ -1,0 +1,29 @@
+{
+  "students": [
+    {
+      "id": "student_1791824443159_55l11",
+      "name": "Soham Kulkarni",
+      "rollNo": "2526UCS045",
+      "email": "sohamskulkarni2246@gmail.com",
+      "phone": "7499289790",
+      "department": "BTech Computer Science 2nd year",
+      "password": "SOHAm@2246",
+      "createdAt": "2026-10-12T17:00:43.159Z"
+    }
+  ],
+  "staffUsers": [
+    {
+      "id": "staff_1791824580369_nuywk",
+      "canteenName": "Canteen 1",
+      "managerName": "Ramesh Kumar",
+      "staffId": "canteen_1",
+      "email": "canteen@gmail.com",
+      "phone": "1234567890",
+      "counterLocation": "Near Computer Science Department",
+      "password": "canteen_1",
+      "createdAt": "2026-10-12T17:03:00.369Z"
+    }
+  ],
+  "items": [],
+  "orders": []
+}

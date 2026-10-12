@@ -1,39 +1,37 @@
-# 🍔 CampusBite - College Canteen Pre-Order System (Frontend)
+# 🍔 CampusBite - College Canteen Pre-Order System
 
-A modern, fast, and responsive frontend for a college canteen pre-order system, designed with **Swiggy and Zomato** aesthetics.
+A production-grade, fast, and responsive college canteen pre-order system designed with **Swiggy and Zomato** aesthetics.
 
 ---
 
 ## ✨ Features Breakdown
 
-### 🎨 1. Swiggy & Zomato Inspired Design
-- **Signature Food Cards**: High-resolution dish photos, Veg/Non-Veg indicators (green square / red triangle), prep time tags (`⚡ 10m prep`), bold pricing in ₹, and stock counts.
-- **Micro-interactions**: Signature Swiggy floating **`+ ADD`** button that switches directly into a **`[-] 2 [+]`** quantity counter when in cart.
-- **Sticky Floating Cart Bar**: Bottom pill indicating `X Items | ₹Total • VIEW CART ➔`.
-- **Appetizing Color Palette**: Swiggy Orange (`#FC8019`), Zomato Red (`#E23744`), clean cards with soft shadows, and Google Fonts (`Plus Jakarta Sans` & `Inter`).
+### 🚪 1. Role-First Entry Portal (Student vs Staff / New Canteen)
+- When opening the application, users are immediately presented with a role selection screen:
+  - **🎓 College Student**: Browse menu, place pre-orders, monitor live kitchen prep time.
+  - **👨‍🍳 Canteen Staff / Outlet**: Manage menu items, accept student orders, update status, track stock.
+- **Student Authentication**:
+  - **Sign In**: Student Roll Number / ID (or Email) + Password.
+  - **Sign Up**: Full Name, Student Roll Number / ID, College Email, Phone, Department/Year, Password.
+- **Canteen Staff Authentication**:
+  - **Sign In**: Staff ID / Username (or Email) + Password.
+  - **Sign Up (New Canteen Outlet Registration)**: Canteen Name, Counter Location / Room, Manager Name, Staff ID, Email, Phone, Password.
+- **100% Real Verification**: No demo credentials, no preset shortcuts. All accounts are validated against the backend.
 
-### 🍽️ 2. Dynamic Backend-Driven Menu (Initial State)
-- **Zero Hardcoded Items**: Initially, no food item cards appear until loaded through the backend REST API (`GET /api/items`).
-- **Graceful Empty State**: If the backend has not published items yet, an informative banner instructs staff to add items, while providing an optional "Load Sample Menu (Demo)" button for rapid UI previewing.
+### 🎨 2. Swiggy & Zomato Inspired Aesthetics
+- **Food Cards**: Veg/Non-Veg indicators (green square / red triangle), high-resolution images, preparation time tags (`⚡ 10m prep`), bold pricing in ₹, and real-time stock counters.
+- **Interactive Add Counter**: Floating `+ ADD` button that transforms into a `[-] 2 [+]` counter when added to cart.
+- **Floating Bottom Cart Pill**: Sticky pill indicating `X Items | ₹Total • VIEW CART ➔`.
+- **Appetizing Styling**: Swiggy Orange (`#FC8019`), Zomato Red (`#E23744`), clean cards with soft elevation shadows, and Google Fonts (`Plus Jakarta Sans` & `Inter`).
 
-### 🔐 3. Dual Role Authentication (Login)
-- **Student Login**:
-  - Full Name, Student Roll Number / ID (e.g. `CS-2024-42`), Department.
-  - "⚡ Autofill Demo Student" button for 1-click testing.
-- **Canteen Staff Login**:
-  - Staff Username / ID, Security PIN (Demo PIN: `1234`).
-  - "⚡ Autofill Demo Staff" button.
-- Instant role switcher pill in the header.
+### 🍽️ 3. Backend-Driven Menu (Zero Hardcoded Items Initially)
+- By default, initial menu is **completely empty** (`[]`) and is populated dynamically via `GET /api/items`.
+- When empty, a clean notice instructs staff to publish today's items.
 
 ### 👨‍🍳 4. Canteen Staff Operations Portal
 - **Add Food Item**:
-  - Photo of item: Device file upload (with live preview) OR image URL OR 8 quick photo presets (Samosa, Burger, Thali, Dosa, Coffee, etc.).
-  - Item Name.
-  - Available Quantity / Stock.
-  - Price in ₹.
-  - Category (Snacks, Meals, South Indian, Fast Food, Beverages, Desserts).
-  - Dietary Type (Veg / Non-Veg).
-  - Prep Time estimate.
+  - Photo upload from device (with instant preview) OR image URL OR 8 quick food presets (Samosa, Burger, Thali, Dosa, Coffee, etc.).
+  - Item Name, Available Quantity / Stock, Price in ₹, Category, Dietary preference (Veg/Non-Veg), and Prep Time estimate.
 - **Live Order & Status Manager**:
   - View real-time student pre-orders with Token Number `#CB-XXX`, student roll, itemized details, and offline amount to collect.
   - Status actions:
@@ -41,9 +39,7 @@ A modern, fast, and responsive frontend for a college canteen pre-order system, 
     - `🟠 Mark Preparing` (with interactive **Remaining Time adjuster** `-5m`, `+5m` so students know exact time left!)
     - `🟢 Mark Ready for Pickup`
     - `✔️ Done (Collected & Paid)`
-- **Menu Inventory Control**:
-  - Adjust stock on the fly (+1, -1, +5, -5).
-  - Delete items or clear menu.
+- **Menu Inventory Control**: Adjust stock (+1, -1, +5, -5) and delete items.
 
 ### 🎓 5. Student Pre-Order & Cart Section
 - **Menu Browsing**: Search bar, category pill filter, Pure Veg filter switch.
@@ -58,42 +54,29 @@ A modern, fast, and responsive frontend for a college canteen pre-order system, 
 - **Live Pre-order Tracker**:
   - Token Number (e.g. `#CB-482`) to present at the counter.
   - 4-Stage visual status stepper (*Received ➔ Preparing ➔ Ready ➔ Completed*).
-  - Live preparation time countdown badge (e.g. `⏳ ~8 mins remaining`).
+  - Live preparation time countdown badge (e.g. `⏳ ~8 mins remaining`) updated by staff in real time.
 
 ---
 
-## 🛠️ Tech Stack & Setup
+## 🛠️ How to Run the Project
 
-- **Framework**: React 19 + Vite 8
-- **Icons**: Lucide React
-- **Typography**: Plus Jakarta Sans & Inter
-- **Styling**: Clean CSS system with CSS custom properties (Swiggy/Zomato design language)
+### 1. Start the Backend Server:
+```powershell
+cd C:\Users\admin\.gemini\antigravity\scratch\Campus_bite_frontend
+npm run server
+```
+The backend will start at `http://localhost:5000` and automatically persist student accounts, canteen registrations, items, and orders to `backend_data.json`.
 
-### Running the Project:
-
-```bash
-# 1. Navigate to the project directory
-cd Campus_bite_frontend
-
-# 2. Install dependencies
-npm install
-
-# 3. Start Vite development server
+### 2. Start the Frontend:
+In a new terminal window:
+```powershell
+cd C:\Users\admin\.gemini\antigravity\scratch\Campus_bite_frontend
 npm run dev
 ```
-
-Visit the displayed local URL (typically `http://localhost:5173/`).
+Open `http://localhost:5173/` in your browser.
 
 ---
 
-## 🔌 Connecting to Backend API
+## 🔌 API & Integration
 
-1. Copy `.env.example` to `.env`:
-   ```bash
-   VITE_API_BASE_URL=http://localhost:5000/api
-   ```
-2. See the file [`BACKEND_API_GUIDE.md`](./BACKEND_API_GUIDE.md) for:
-   - Full REST endpoints specification.
-   - Database schema shapes.
-   - Ready-to-copy Node/Express and Python/FastAPI starter code.
-3. *Note*: If the backend server is not running yet, the frontend automatically falls back to local storage mode, ensuring you can test the entire workflow (Student Pre-ordering & Staff Kitchen Management) without crashing!
+See [`BACKEND_API_GUIDE.md`](./BACKEND_API_GUIDE.md) for full REST schemas, endpoints, and database models.

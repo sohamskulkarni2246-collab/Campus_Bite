@@ -1,9 +1,9 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
-import { Trash2, Plus, Minus, AlertTriangle, Sparkles, RefreshCw } from 'lucide-react';
+import { Trash2, Plus, Minus, RefreshCw } from 'lucide-react';
 
 export default function InventoryList() {
-  const { items, updateItemDetails, deleteItem, loadDemoMenu, clearCurrentMenu, loadItems } = useApp();
+  const { items, updateItemDetails, deleteItem, loadItems } = useApp();
 
   const handleStockChange = (item, delta) => {
     const nextQty = Math.max(0, item.quantity + delta);
@@ -23,26 +23,14 @@ export default function InventoryList() {
         <div>
           <h3 style={{ fontSize: '18px', fontWeight: 800 }}>📦 Current Menu Items ({items.length})</h3>
           <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-            Manage quantities, availability, and delete items from the canteen menu.
+            Manage quantities, availability, and delete items from your canteen menu.
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div>
           <button className="nav-btn" onClick={loadItems}>
             <RefreshCw size={14} />
-            <span>Reload</span>
-          </button>
-          <button className="nav-btn" onClick={loadDemoMenu}>
-            <Sparkles size={14} color="#fc8019" />
-            <span>Load Demo Menu</span>
-          </button>
-          <button 
-            className="nav-btn" 
-            onClick={clearCurrentMenu}
-            style={{ color: '#ef4444' }}
-            title="Reset menu to empty state"
-          >
-            Clear Menu (Empty)
+            <span>Refresh Inventory</span>
           </button>
         </div>
       </div>
@@ -51,7 +39,7 @@ export default function InventoryList() {
         <div className="empty-menu-box" style={{ padding: '40px 20px' }}>
           <div style={{ fontSize: '40px', marginBottom: '12px' }}>🍽️</div>
           <h4>No items in menu</h4>
-          <p>Click "Add Food Item" above or click "Load Demo Menu" to seed sample items.</p>
+          <p>Switch to the "Add New Food Item" tab to add delicious dishes to your canteen menu!</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

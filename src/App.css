@@ -1215,3 +1215,176 @@
     align-items: stretch;
   }
 }
+
+/* -------------------------------------------------------------
+   AUTHENTICATION & ROLE SELECTION PORTAL
+------------------------------------------------------------- */
+.auth-portal-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 20px;
+  background: radial-gradient(circle at 10% 20%, rgba(254, 243, 199, 0.5) 0%, rgba(254, 215, 170, 0.25) 45%, #f8f9fa 90%);
+}
+
+.auth-portal-card {
+  width: 100%;
+  background: #ffffff;
+  border-radius: 24px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
+  padding: 36px 32px;
+  position: relative;
+}
+
+.role-selection-card {
+  background: #ffffff;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 28px 24px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.role-selection-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-lg);
+}
+
+.student-card:hover {
+  border-color: #3b82f6;
+  background: #f8fbff;
+}
+
+.staff-card:hover {
+  border-color: #fc8019;
+  background: #fffbf8;
+}
+
+.role-icon-circle {
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.student-icon {
+  background: #eef7fe;
+  color: #2563eb;
+}
+
+.staff-icon {
+  background: #fff7ed;
+  color: #ea580c;
+}
+
+.role-action-btn {
+  margin-top: auto;
+  padding: 12px 18px;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.student-btn {
+  background: #2563eb;
+  color: #fff;
+}
+
+.student-btn:hover {
+  background: #1d4ed8;
+}
+
+.staff-btn {
+  background: #fc8019;
+  color: #fff;
+}
+
+.staff-btn:hover {
+  background: #ea580c;
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  background: #f1f3f5;
+  margin-bottom: 8px;
+}
+
+.back-btn:hover {
+  background: #e5e7eb;
+  color: var(--text-primary);
+}
+
+.auth-tab-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  background: #f1f3f5;
+  padding: 4px;
+  border-radius: var(--radius-md);
+  margin-bottom: 20px;
+}
+
+.auth-tab-btn {
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+}
+
+.auth-tab-btn.active {
+  background: #ffffff;
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.auth-error-banner {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.auth-input-wrapper {
+  position: relative;
+}
+
+.auth-field-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+}
+
+.form-control.with-icon {
+  padding-left: 42px;
+  width: 100%;
+}
+

@@ -29,7 +29,6 @@ export function AppProvider({ children }) {
 
   // UI Modals & Drawers
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isOrdersModalOpen, setIsOrdersModalOpen] = useState(false);
   const [activeTrackingOrderId, setActiveTrackingOrderId] = useState(null);
 
@@ -45,7 +44,7 @@ export function AppProvider({ children }) {
     setToast({ id: Date.now(), message, type });
     setTimeout(() => {
       setToast(null);
-    }, 3500);
+    }, 4000);
   }, []);
 
   // Sync user & cart with localStorage
@@ -79,7 +78,6 @@ export function AppProvider({ children }) {
   const loadOrders = useCallback(async () => {
     setOrdersLoading(true);
     try {
-      // If student, filter by studentRoll if desired, or load all
       const studentRoll = user?.role === 'STUDENT' ? user.rollNo : null;
       const res = await api.fetchOrders(studentRoll);
       setOrders(res.data || []);
@@ -97,14 +95,72 @@ export function AppProvider({ children }) {
   }, [loadItems]);
 
   useEffect(() => {
-    loadOrders();
-    const interval = setInterval(() => {
+    if (user) {
       loadOrders();
-    }, 6000); // Poll every 6 seconds for live updates
-    return () => clearInterval(interval);
-  }, [loadOrders]);
+      const interval = setInterval(() => {
+        loadOrders();
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [user, loadOrders]);
 
-  // Cart operations
+  // -------------------------------------------------------------
+  // REAL AUTHENTICATION METHODS (STUDENT & STAFF / CANTEEN)
+  // -------------------------------------------------------------
+
+  const registerStudent = async (formData) => {
+    const res = await api.studentSignUp(formData);
+    if (res.success) {
+      setUser(res.user);
+      showToast(`Welcome, ${res.user.name}! Account registered successfully.`, 'success');
+      return { success: true };
+    }
+    showToast(res.error || 'Student registration failed', 'error');
+    return { success: false, error: res.error };
+  };
+
+  const loginStudent = async (identifier, password) => {
+    const res = await api.studentSignIn(identifier, password);
+    if (res.success) {
+      setUser(res.user);
+      showToast(`Welcome back, ${res.user.name}!`, 'success');
+      return { success: true };
+    }
+    showToast(res.error || 'Student sign in failed', 'error');
+    return { success: false, error: res.error };
+  };
+
+  const registerStaff = async (formData) => {
+    const res = await api.staffSignUp(formData);
+    if (res.success) {
+      setUser(res.user);
+      showToast(`Canteen "${res.user.canteenName}" registered! Welcome, ${res.user.name}.`, 'success');
+      return { success: true };
+    }
+    showToast(res.error || 'Canteen registration failed', 'error');
+    return { success: false, error: res.error };
+  };
+
+  const loginStaff = async (identifier, password) => {
+    const res = await api.staffSignIn(identifier, password);
+    if (res.success) {
+      setUser(res.user);
+      showToast(`Welcome, ${res.user.name} (${res.user.canteenName})!`, 'success');
+      return { success: true };
+    }
+    showToast(res.error || 'Staff sign in failed', 'error');
+    return { success: false, error: res.error };
+  };
+
+  const logoutUser = () => {
+    setUser(null);
+    clearCart();
+    showToast('Signed out successfully', 'info');
+  };
+
+  // -------------------------------------------------------------
+  // CART OPERATIONS
+  // -------------------------------------------------------------
   const addToCart = (item) => {
     setCart((prev) => {
       const existing = prev.find((i) => i.id === item.id);
@@ -129,7 +185,7 @@ export function AppProvider({ children }) {
       }
       const item = items.find((it) => it.id === itemId);
       if (item && newQty > item.quantity) {
-        showToast(`Cannot add more than available stock (${item.quantity})`, 'warning');
+        showToast(`Cannot exceed available canteen stock (${item.quantity})`, 'warning');
         return prev;
       }
       return prev.map((i) => (i.id === itemId ? { ...i, quantity: newQty } : i));
@@ -148,11 +204,12 @@ export function AppProvider({ children }) {
   const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  // Preorder submission (Strictly offline payment)
+  // -------------------------------------------------------------
+  // PREORDER SUBMISSION (Strictly Offline Payment)
+  // -------------------------------------------------------------
   const placeOrder = async (cookingNotes = '') => {
     if (!user || user.role !== 'STUDENT') {
-      showToast('Please login as Student to place a preorder', 'error');
-      setIsLoginOpen(true);
+      showToast('Please sign in as a student to place an order', 'error');
       return null;
     }
 
@@ -187,18 +244,20 @@ export function AppProvider({ children }) {
       clearCart();
       setIsCartOpen(false);
       await loadOrders();
-      await loadItems(); // Refresh inventory stock
+      await loadItems();
       setActiveTrackingOrderId(res.order.id);
       setIsOrdersModalOpen(true);
-      showToast(`Pre-order placed! Token #${res.order.token}`, 'success');
+      showToast(`Pre-order submitted! Token #${res.order.token}`, 'success');
       return res.order;
     } else {
-      showToast('Failed to place order. Please try again.', 'error');
+      showToast('Failed to place pre-order. Please try again.', 'error');
       return null;
     }
   };
 
-  // Staff operations
+  // -------------------------------------------------------------
+  // STAFF OPERATIONS
+  // -------------------------------------------------------------
   const addNewItem = async (itemData) => {
     const res = await api.createMenuItem(itemData);
     if (res.success) {
@@ -206,7 +265,7 @@ export function AppProvider({ children }) {
       showToast(`"${itemData.name}" added to menu!`, 'success');
       return true;
     }
-    showToast('Failed to add item', 'error');
+    showToast('Failed to add item to menu', 'error');
     return false;
   };
 
@@ -230,7 +289,6 @@ export function AppProvider({ children }) {
     return false;
   };
 
-  // Staff updates order status & remaining time
   const handleUpdateOrderStatus = async (orderId, newStatus, remainingMinutes) => {
     const res = await api.updateOrderStatus(orderId, newStatus, remainingMinutes);
     if (res.success) {
@@ -238,41 +296,18 @@ export function AppProvider({ children }) {
       showToast(`Order status updated to ${newStatus}`, 'success');
       return true;
     }
-    showToast('Failed to update status', 'error');
+    showToast('Failed to update order status', 'error');
     return false;
-  };
-
-  // Demo Helpers
-  const loadDemoMenu = () => {
-    const demoItems = api.seedSampleMenu();
-    setItems(demoItems);
-    showToast('Loaded sample canteen menu for preview!', 'info');
-  };
-
-  const clearCurrentMenu = () => {
-    const cleared = api.clearMenuData();
-    setItems(cleared);
-    showToast('Menu cleared. Initial state is empty as requested.', 'info');
-  };
-
-  // User Auth
-  const loginUser = (userData) => {
-    setUser(userData);
-    setIsLoginOpen(false);
-    showToast(`Welcome, ${userData.name}! Logged in as ${userData.role}`, 'success');
-  };
-
-  const logoutUser = () => {
-    setUser(null);
-    clearCart();
-    showToast('Logged out successfully', 'info');
   };
 
   return (
     <AppContext.Provider
       value={{
         user,
-        loginUser,
+        registerStudent,
+        loginStudent,
+        registerStaff,
+        loginStaff,
         logoutUser,
         items,
         itemsLoading,
@@ -298,8 +333,6 @@ export function AppProvider({ children }) {
         setActiveTrackingOrderId,
         isOrdersModalOpen,
         setIsOrdersModalOpen,
-        isLoginOpen,
-        setIsLoginOpen,
         searchQuery,
         setSearchQuery,
         selectedCategory,
@@ -307,8 +340,6 @@ export function AppProvider({ children }) {
         isVegOnly,
         setIsVegOnly,
         isBackendConnected,
-        loadDemoMenu,
-        clearCurrentMenu,
         toast,
         showToast,
       }}

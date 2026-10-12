@@ -6,9 +6,9 @@ import {
   GraduationCap, 
   Clock, 
   LogOut, 
-  LogIn, 
   MapPin, 
-  Radio 
+  Radio,
+  Store
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -17,17 +17,15 @@ export default function Navbar() {
     cartCount, 
     cartTotal, 
     setIsCartOpen, 
-    setIsLoginOpen, 
     logoutUser, 
     setIsOrdersModalOpen,
-    isBackendConnected,
-    loginUser
+    isBackendConnected
   } = useApp();
 
   return (
     <header className="navbar">
       <div className="navbar-inner">
-        {/* Brand Logo & College Canteen Location */}
+        {/* Brand Logo & Canteen Info */}
         <div className="brand-section" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
           <div className="brand-logo">
             🍔
@@ -36,7 +34,11 @@ export default function Navbar() {
             <h1>CampusBite</h1>
             <div className="brand-location">
               <MapPin size={12} color="#fc8019" />
-              <span>Main Campus Canteen • Block B</span>
+              <span>
+                {user?.role === 'STAFF' && user.canteenName
+                  ? `${user.canteenName} • ${user.counterLocation || 'Main Counter'}`
+                  : 'College Canteen • Campus Food Court'}
+              </span>
             </div>
           </div>
         </div>
@@ -69,19 +71,19 @@ export default function Navbar() {
 
         {/* Nav Actions */}
         <div className="nav-actions">
-          {/* User Role Badge / Quick Switcher */}
-          {user ? (
+          {user && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {/* User Identity Badge */}
               <div className={`role-badge ${user.role === 'STAFF' ? 'staff' : 'student'}`}>
                 {user.role === 'STAFF' ? (
                   <>
-                    <ChefHat size={14} />
-                    <span>Staff: {user.name}</span>
+                    <Store size={14} />
+                    <span>{user.canteenName || 'Canteen'}: {user.name}</span>
                   </>
                 ) : (
                   <>
                     <GraduationCap size={14} />
-                    <span>Student: {user.name}</span>
+                    <span>Student: {user.name} ({user.rollNo})</span>
                   </>
                 )}
               </div>
@@ -98,40 +100,21 @@ export default function Navbar() {
                 </button>
               )}
 
-              {/* Quick Role Toggle (Useful for pairing & demoing between student and staff) */}
-              <button 
-                className="nav-btn"
-                style={{ fontSize: '12px', padding: '6px 12px' }}
-                onClick={() => {
-                  if (user.role === 'STUDENT') {
-                    loginUser({ role: 'STAFF', name: 'Chef Ramesh', id: 'staff_101', title: 'Canteen Supervisor' });
-                  } else {
-                    loginUser({ role: 'STUDENT', name: 'Rahul Sharma', rollNo: 'CS-2024-42', department: 'Computer Science' });
-                  }
-                }}
-                title="Switch between Student and Staff view"
-              >
-                Switch to {user.role === 'STUDENT' ? 'Staff' : 'Student'}
-              </button>
-
+              {/* Sign Out Button */}
               <button 
                 className="nav-btn" 
                 onClick={logoutUser}
-                title="Logout"
-                style={{ padding: '8px' }}
+                title="Sign out of CampusBite"
+                style={{ color: '#ef4444', borderColor: '#fecaca' }}
               >
-                <LogOut size={16} />
+                <LogOut size={15} />
+                <span>Sign Out</span>
               </button>
             </div>
-          ) : (
-            <button className="nav-btn nav-btn-primary" onClick={() => setIsLoginOpen(true)}>
-              <LogIn size={16} />
-              <span>Login (Student / Staff)</span>
-            </button>
           )}
 
-          {/* Cart Button (Always visible for students) */}
-          {(!user || user.role === 'STUDENT') && (
+          {/* Cart Button (Always visible for logged in students) */}
+          {user?.role === 'STUDENT' && (
             <button 
               className="nav-btn cart-btn" 
               onClick={() => setIsCartOpen(true)}
